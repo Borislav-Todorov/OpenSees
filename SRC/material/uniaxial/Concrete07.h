@@ -59,6 +59,14 @@ class Concrete07 : public UniaxialMaterial
 	  	 FEM_ObjectBroker &theBroker);    
     
 		void Print(OPS_Stream &s, int flag =0);
+
+		// AddingSensitivity:BEGIN //////////////////////////////////////////
+		int    setParameter(const char** argv, int argc, Parameter& param);
+		int    updateParameter(int parameterID, Information& info);
+		int    activateParameter(int parameterID);
+		double getStressSensitivity(int gradIndex, bool conditional);
+		int    commitSensitivity(double strainGradient, int gradIndex, int numGrads);
+		// AddingSensitivity:END ///////////////////////////////////////////
 	
 	protected:
 
@@ -149,6 +157,11 @@ class Concrete07 : public UniaxialMaterial
       
 	  // Calculate the envelope stress for a given nondimensional strain.
 	  void envelope(double x, double& fc, double& Et, int flag);
+
+	  // AddingSensitivity:BEGIN //////////////////////////////////////////
+	  int parameterID;
+	  Matrix* SHVs;
+	  // AddingSensitivity:END ///////////////////////////////////////////
 
 	  // Calculate the stress-strain curve for Rule 13
 	  void calculate13Stress(double &fc, double &Et, double ec, double eI, double eF, double fF, double EF);
