@@ -35,6 +35,7 @@
 #include <Vector.h>
 #include <Channel.h>
 #include <Information.h>
+#include <Parameter.h>
 #include <float.h>
 #include <iostream>
 #include <elementAPI.h>
@@ -75,7 +76,7 @@ void* OPS_Concrete07()
 Concrete07::Concrete07 (int tag, double FPC, double EPSC0, double EC, double FPT, double EPST0, double XCRP, double XCRN, double R)
 :UniaxialMaterial(tag, MAT_TAG_Concrete07), fpc(FPC), epsc0(EPSC0), Ec(EC), fpt(FPT), epst0(EPST0), xcrp(XCRP), xcrn(XCRN), r(R) {
 
-	// Calculate the variables that are needed to define the envelopw
+	// Calculate the variables that are needed to define the envelope
 	nn = (Ec*epsc0)/fpc;
 	np = (Ec*epst0)/fpt;
 
@@ -93,16 +94,29 @@ Concrete07::Concrete07 (int tag, double FPC, double EPSC0, double EC, double FPT
 
 	// Set all history and state variables to initial values
 	this->revertToStart();
+
+	// AddingSensitivity:BEGIN /////////////////////////////////////
+	parameterID = 0;
+	SHVs = 0;
+	// AddingSensitivity:END //////////////////////////////////////
 }
 
 Concrete07::Concrete07() : UniaxialMaterial(0,MAT_TAG_Concrete07)
 {
 	opserr << "WARNING: Reguire input of tag, fpc, epsc0, Ec, fpt, epst0, xcrp, xcrn, deltaFcu, r\n";
+	// AddingSensitivity:BEGIN /////////////////////////////////////
+	parameterID = 0;
+	SHVs = 0;
+	// AddingSensitivity:END //////////////////////////////////////
 }
 
 Concrete07::~Concrete07()
 {
 	// No dynamic variables are used so a destructor is not required.
+	// AddingSensitivity:BEGIN /////////////////////////////////////
+	if (SHVs != 0)
+		delete SHVs;
+	// AddingSensitivity:END //////////////////////////////////////
 }
 
 
@@ -1712,6 +1726,11 @@ int Concrete07::revertToStart()
 	Tstress = 0.0;
 	Ttangent = Ec;
 
+	// AddingSensitivity:BEGIN /////////////////////////////////
+	if (SHVs != 0)
+		SHVs->Zero();
+	// AddingSensitivity:END //////////////////////////////////
+
 	return 0;
 }
 
@@ -1902,3 +1921,189 @@ void Concrete07::Print(OPS_Stream &s, int flag)
 
 	return;
 }
+
+// AddingSensitivity:BEGIN ///////////////////////////////////
+int
+Concrete07::setParameter(const char** argv, int argc, Parameter& param)
+{
+
+	if (strcmp(argv[0], "fpc") == 0) == 0) {
+		param.setValue(fpc);
+		return param.addObject(1, this);
+	}
+	if (strcmp(argv[0], "epsc0") == 0) {
+		param.setValue(epsc0);
+		return param.addObject(2, this);
+	}
+	if (strcmp(argv[0], "Ec") == 0) {
+		param.setValue(Ec);
+		return param.addObject(3, this);
+	}
+	if (strcmp(argv[0], "fpt") == 0) {
+		param.setValue(fpt);
+		return param.addObject(4, this);
+	}
+	if (strcmp(argv[0], "epst0") == 0) {
+		param.setValue(epst0);
+		return param.addObject(5, this);
+	}
+	if (strcmp(argv[0], "xcrp") == 0) {
+		param.setValue(xcrp);
+		return param.addObject(6, this);
+	}
+	if (strcmp(argv[0], "xcrn") == 0) {
+		param.setValue(xcrn);
+		return param.addObject(7, this);
+	}
+	if (strcmp(argv[0], "r") == 0) {
+		param.setValue(r);
+		return param.addObject(8, this);
+	}
+
+	return -1;
+}
+
+
+
+int
+Concrete07::updateParameter(int parameterID, Information& info)
+{
+	switch (parameterID) {
+	case -1:
+		return -1;
+	case 1:
+		this->fpc = info.theDouble;
+		break;
+	case 2:
+		this->epsc0 = info.theDouble;
+		break;
+	case 3:
+		this->Ec = info.theDouble;
+		break;
+	case 4:
+		this->fpt = info.theDouble;
+		break;
+	case 5:
+		this->epst0 = info.theDouble;
+		break;
+	case 6:
+		this->xcrp = info.theDouble;
+		break;
+	case 7:
+		this->xcrn = info.theDouble;
+		break;
+	case 8:
+		this->r = info.theDouble;
+		break;
+	default:
+		break;
+	}
+
+	// Calculate the variables that are needed to define the envelope
+	nn = (Ec * epsc0) / fpc;
+	np = (Ec * epst0) / fpt;
+
+	double y(0), z(0);
+
+	calculateYandZ(xcrn, y, z, nn);
+
+	xsp = xcrn - y / (nn * z);
+
+	calculateYandZ(xcrp, y, z, np);
+
+	xcrk = xcrp - y / (np * z);
+
+	e0 = 0;
+
+	return 0;
+}
+
+
+
+
+int
+Concrete07::activateParameter(int passedParameterID)
+{
+	parameterID = passedParameterID;
+
+	return 0;
+}
+
+
+
+double
+Concrete07::getStressSensitivity(int gradIndex, bool conditional)
+{
+	// Initialize return value
+	// not sure what variables to pass here, tried to reference the procedure in concrete01.cpp file
+
+
+	// Pick up sensitivity history variables
+	// missing 
+
+	// Assign values to parameter derivatives (depending on what's random)
+	/* This part seems correct
+	double fpcSensitivity = 0.0;
+	double epsc0Sensitivity = 0.0;
+	double EcSensitivity = 0.0;
+	double fptSensitivity = 0.0;
+	double epst0Sensitivity = 0.0;
+	double xcrpSensitivity = 0.0;
+	double xcrnSensitivity = 0.0;
+	double rSensitivity = 0.0;
+	if (parameterID == 1) {
+		fpcSensitivity = 1.0;
+	}
+	else if (parameterID == 2) {
+		epsc0Sensitivity = 1.0;
+	}
+	else if (parameterID == 3) {
+		EcSensitivity = 1.0;
+	}
+	else if (parameterID == 4) {
+		fptSensitivity = 1.0;
+	}
+	else if (parameterID == 5) {
+		epst0Sensitivity = 1.0;
+	}
+	else if (parameterID == 6) {
+		xcrpSensitivity = 1.0;
+	}
+	else if (parameterID == 7) {
+		xcrnSensitivity = 1.0;
+	}
+	else if (parameterID == 8) {
+		rSensitivity = 1.0;
+	}
+	*/
+	/*
+	 It seems that the unloading/reloading rules are placed here, but may not be necessary for my research goals
+	
+	}*/
+
+	return 0;
+}
+
+
+
+
+double
+Concrete07::getInitialTangentSensitivity(int gradIndex)
+{
+	// For now, assume that this is only called for initial stiffness 
+	if (parameterID == 2) {
+		return 1.0;
+	}
+	else {
+		return 0.0;
+	}
+}
+
+
+int
+Concrete07::commitSensitivity(double TstrainSensitivity, int gradIndex, int numGrads)
+{
+	return 0;
+}
+
+// AddingSensitivity:END /////////////////////////////////////////////
