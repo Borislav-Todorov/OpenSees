@@ -2084,22 +2084,6 @@ Concrete07::getStressSensitivity(int gradIndex, bool conditional)
 	return 0;
 }
 
-
-
-
-double
-Concrete07::getInitialTangentSensitivity(int gradIndex)
-{
-	// For now, assume that this is only called for initial stiffness 
-	if (parameterID == 2) {
-		return 1.0;
-	}
-	else {
-		return 0.0;
-	}
-}
-
-
 int
 Concrete07::commitSensitivity(double TstrainSensitivity, int gradIndex, int numGrads)
 {
