@@ -1927,7 +1927,7 @@ int
 Concrete07::setParameter(const char** argv, int argc, Parameter& param)
 {
 
-	if (strcmp(argv[0], "fpc") == 0) == 0) {
+	if (strcmp(argv[0], "fpc") == 0) {
 		param.setValue(fpc);
 		return param.addObject(1, this);
 	}
